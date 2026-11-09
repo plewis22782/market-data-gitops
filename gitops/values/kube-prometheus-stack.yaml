@@ -9,6 +9,9 @@ prometheus:
     podMonitorSelectorNilUsesHelmValues: false
     retention: 45d          # > the 30-day SLO window
     storageSpec:
+      # The kubelet creates a subPath dir as root on hostPath volumes, which uid 1000 can't
+      # write. Mount the PV root instead; the host dir is owned by the same uid 1000.
+      disableMountSubPath: true
       volumeClaimTemplate:
         spec:
           storageClassName: rack-retained   # static PV in gitops/platform, survives rebuilds

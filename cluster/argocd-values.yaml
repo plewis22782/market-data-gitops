@@ -3,6 +3,21 @@ server:
     type: NodePort
     nodePortHttps: 30443
 configs:
+  cm:
+    # Give Application resources a health status so the app of apps honors sync waves on a fresh
+    # cluster: platform (StorageClass + PV, wave -1) must be Healthy before Prometheus (wave 0).
+    # The storage-migration rebuild on 2026-11-09 hit exactly this race.
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil and obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+      return hs
   params:
     # Self-signed TLS on the LAN NodePort; no ingress in this cluster.
     server.insecure: false
