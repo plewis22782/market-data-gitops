@@ -1,0 +1,9 @@
+# Static, pre-provisioned volumes only (see prometheus-pv.yaml). The Prometheus operator refuses
+# a storageClassName that doesn't exist, even when the PV is pre-bound, so the class is declared.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: rack-retained
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: Immediate
