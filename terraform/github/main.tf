@@ -11,6 +11,7 @@ resource "github_repository" "this" {
   allow_rebase_merge     = false
   allow_squash_merge     = true
   delete_branch_on_merge = true
+  allow_auto_merge       = true # PRs merge themselves once every required check is green
 
   lifecycle { prevent_destroy = true }
 }
