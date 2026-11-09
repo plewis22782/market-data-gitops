@@ -25,7 +25,7 @@ install -m 0755 "$tmp/linux-amd64/helm" "$bin/helm"
 # k3d: release checksums.txt
 fetch "$tmp/k3d" "https://github.com/k3d-io/k3d/releases/download/${K3D_VERSION}/k3d-linux-amd64"
 fetch "$tmp/k3d.sums" "https://github.com/k3d-io/k3d/releases/download/${K3D_VERSION}/checksums.txt"
-(cd "$tmp" && grep ' k3d-linux-amd64$' k3d.sums | sed 's/k3d-linux-amd64/k3d/' | sha256sum -c -)
+(cd "$tmp" && grep -E ' (_dist/)?k3d-linux-amd64$' k3d.sums | awk '{print $1"  k3d"}' | sha256sum -c -)
 install -m 0755 "$tmp/k3d" "$bin/k3d"
 
 "$bin/kubectl" version --client=true | head -1

@@ -58,7 +58,7 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             rendered.yaml gitops/apps/*.yaml gitops/bootstrap/*.yaml
       - name: shellcheck
-        run: shellcheck cluster/*.sh
+        run: shellcheck -x -P SCRIPTDIR cluster/*.sh
 
   image:
     needs: [exporter, rules, manifests]
