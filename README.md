@@ -58,7 +58,7 @@ cluster/install-tools.sh     # k3d, kubectl, helm into ~/.local/bin, sha256-veri
 cluster/bootstrap.sh         # cluster + ArgoCD; everything else comes from git
 ```
 
-ArgoCD on `:8441`, Grafana on `:8442`, Prometheus on `:8443` of the host. `cluster/teardown.sh`
+ArgoCD on `:8441` (HTTPS), Grafana on `:8442`, Prometheus on `:8443` of the host. Admin passwords are generated in-cluster; `bootstrap.sh` prints how to read them. `cluster/teardown.sh`
 removes everything. Nothing outside the cluster is touched ([ADR 0002](docs/adr/0002-k3d-on-the-existing-docker-host.md)).
 
 ## Roadmap

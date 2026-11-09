@@ -14,6 +14,11 @@ prometheus:
           accessModes: [ReadWriteOnce]
           resources: { requests: { storage: 20Gi } }
 grafana:
+  # Admin credentials come from a secret cluster/bootstrap.sh generates, never from git.
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
   service:
     type: NodePort
     nodePort: 30300

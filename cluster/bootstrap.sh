@@ -17,6 +17,13 @@ helm repo update argo >/dev/null
 helm upgrade --install argocd argo/argo-cd --version "$ARGOCD_CHART_VERSION" \
   --namespace argocd --create-namespace --values "$here/argocd-values.yaml" --wait --timeout 10m
 
+# Grafana admin password: random, generated once, lives only in the cluster.
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f - >/dev/null
+if ! kubectl -n monitoring get secret grafana-admin >/dev/null 2>&1; then
+  kubectl -n monitoring create secret generic grafana-admin \
+    --from-literal=admin-user=admin --from-literal=admin-password="$(openssl rand -base64 24)"
+fi
+
 kubectl apply -f "$here/../gitops/bootstrap/root.yaml"
-echo "ArgoCD: https://<host>:8441  user admin, password:"
-echo "  kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+echo "ArgoCD:  https://<host>:8441  admin / kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+echo "Grafana: http://<host>:8442   admin / kubectl -n monitoring get secret grafana-admin -o jsonpath='{.data.admin-password}' | base64 -d"
