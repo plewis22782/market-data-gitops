@@ -67,7 +67,7 @@ removes everything. Nothing outside the cluster is touched ([ADR 0002](docs/adr/
 
 ## Roadmap
 
-- [x] Disaster-recovery drills: rebuild from git timed against RTO/RPO ([docs/dr/drills.md](docs/dr/drills.md)). Drill 1 met the RTO (5 min) and failed the RPO, which led to ADR 0006.
+- [x] Disaster-recovery drills: rebuild from git timed against RTO/RPO ([docs/dr/drills.md](docs/dr/drills.md)). Drill 1 met the RTO (5 min) but failed the RPO, which led to ADR 0006; drill 2 met both (7 min, no history lost).
 - [x] Delivery (DORA) metrics from git history: `apps/delivery-metrics`, ADR 0007.
 - [x] Terraform for the GitHub side: settings, `main` ruleset, CI deploy key. `terraform/github`, ADR 0008.
 - [ ] Alertmanager routing to a real receiver.
