@@ -1,0 +1,19 @@
+# Prometheus TSDB on a host directory that outlives the cluster (ADR 0006).
+# Every k3d node mounts $RACK_DATA_DIR at /data (cluster/bootstrap.sh), so the pod sees the
+# same files whichever node it lands on. claimRef binds this PV to the operator's PVC by name,
+# so a rebuilt cluster reattaches to the old data.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: prometheus-tsdb
+spec:
+  capacity: { storage: 20Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: rack-retained
+  hostPath:
+    path: /data/prometheus
+    type: Directory
+  claimRef:
+    namespace: monitoring
+    name: prometheus-kube-prometheus-stack-prometheus-db-prometheus-kube-prometheus-stack-prometheus-0

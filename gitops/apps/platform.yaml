@@ -1,0 +1,17 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"   # storage before the workloads that claim it
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/plewis22782/market-data-gitops.git
+    targetRevision: main
+    path: gitops/platform
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: false, selfHeal: true }   # never prune a PV that holds data

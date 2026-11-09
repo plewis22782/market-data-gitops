@@ -29,6 +29,7 @@ flowchart LR
 | `charts/freshness-exporter/rules/` | SLO recording rules and multiwindow burn-rate alerts, unit-tested with `promtool test rules`. |
 | `gitops/` | ArgoCD app of apps, the Applications, and per-environment values. CI writes the image tag here; ArgoCD does the deploy. |
 | `cluster/` | k3d cluster config, pinned tool versions, checksum-verified tool install, bootstrap and teardown. |
+| `docs/dr/` | Disaster-recovery objectives and drill results. |
 | `docs/adr/` | Architecture decision records. Start with [0001](docs/adr/0001-record-architecture-decisions.md). |
 | `docs/runbooks/` | What to do when an alert fires. |
 
@@ -63,7 +64,7 @@ removes everything. Nothing outside the cluster is touched ([ADR 0002](docs/adr/
 
 ## Roadmap
 
-- [ ] Disaster-recovery drill: delete the cluster, rebuild from git, and record time to restore against a stated RTO.
+- [x] Disaster-recovery drills: rebuild from git timed against RTO/RPO ([docs/dr/drills.md](docs/dr/drills.md)). Drill 1 met the RTO (5 min) and failed the RPO, which led to ADR 0006.
 - [ ] Delivery metrics from GitHub Actions: lead time, deploy frequency, change failure rate, time to restore.
 - [ ] Terraform for the GitHub side: branch protection, required checks, environments.
 - [ ] Alertmanager routing to a real receiver.

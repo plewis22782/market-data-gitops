@@ -7,8 +7,12 @@ here="$(cd "$(dirname "$0")" && pwd)"
 source "$here/versions.env"
 export PATH="$HOME/.local/bin:$PATH"
 
+# Durable state lives outside the cluster so a teardown/rebuild keeps it (ADR 0006).
+RACK_DATA_DIR="${RACK_DATA_DIR:-$HOME/k3d-rack-data}"
+mkdir -p "$RACK_DATA_DIR/prometheus"
+
 if ! k3d cluster list rack >/dev/null 2>&1; then
-  k3d cluster create --config "$here/k3d.yaml"
+  k3d cluster create --config "$here/k3d.yaml" --volume "$RACK_DATA_DIR:/data@all"
 fi
 kubectl config use-context k3d-rack >/dev/null
 

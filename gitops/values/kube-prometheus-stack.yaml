@@ -11,6 +11,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
+          storageClassName: rack-retained   # static PV in gitops/platform, survives rebuilds
           accessModes: [ReadWriteOnce]
           resources: { requests: { storage: 20Gi } }
 grafana:
