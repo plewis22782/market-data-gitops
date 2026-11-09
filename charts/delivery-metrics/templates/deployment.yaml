@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "dm.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels: {{- include "dm.selector" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "dm.selector" . | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: delivery-metrics
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - { name: GITHUB_REPOSITORY, value: {{ .Values.githubRepository | quote }} }
+            - { name: WINDOW_DAYS, value: {{ .Values.windowDays | quote }} }
+            - { name: REFRESH_SECONDS, value: {{ .Values.refreshSeconds | quote }} }
+            - { name: PORT, value: {{ .Values.port | quote }} }
+            {{- if .Values.tokenSecret }}
+            - name: GITHUB_TOKEN
+              valueFrom: { secretKeyRef: { name: {{ .Values.tokenSecret }}, key: token } }
+            {{- end }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.port }}
+          readinessProbe:
+            tcpSocket: { port: metrics }
+            periodSeconds: 10
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }

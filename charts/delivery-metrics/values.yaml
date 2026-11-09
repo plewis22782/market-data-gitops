@@ -1,0 +1,22 @@
+image:
+  repository: ghcr.io/plewis22782/delivery-metrics
+  tag: ""
+  pullPolicy: IfNotPresent
+
+githubRepository: plewis22782/market-data-gitops
+# Optional: name of a Secret with key `token` (raises the API limit from 60 to 5,000 requests/h).
+# Unauthenticated is enough at the default refresh: ~2-4 requests every 10 minutes.
+tokenSecret: ""
+windowDays: 30
+refreshSeconds: 600
+port: 9109
+
+resources:
+  requests: { cpu: 10m, memory: 48Mi }
+  limits: { memory: 128Mi }
+
+serviceMonitor:
+  enabled: true
+  interval: 60s
+dashboard:
+  enabled: true

@@ -13,13 +13,12 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  IMAGE: ghcr.io/${{ github.repository_owner }}/freshness-exporter
-
 jobs:
-  exporter:
+  python:
+    strategy:
+      matrix: { app: [freshness-exporter, delivery-metrics] }
     runs-on: ubuntu-latest
-    defaults: { run: { working-directory: apps/freshness-exporter } }
+    defaults: { run: { working-directory: "apps/${{ matrix.app }}" } }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -46,22 +45,26 @@ jobs:
       - uses: actions/checkout@v4
       - uses: azure/setup-helm@v4
         with: { version: v3.19.0 }
-      - name: helm lint + render with the real environment values
+      - name: helm lint + render every chart with its real environment values
         run: |
-          helm lint charts/freshness-exporter -f gitops/values/freshness-exporter.yaml
-          helm template fe charts/freshness-exporter -f gitops/values/freshness-exporter.yaml > rendered.yaml
+          for c in freshness-exporter delivery-metrics; do
+            helm lint "charts/$c" -f "gitops/values/$c.yaml"
+            helm template "$c" "charts/$c" -f "gitops/values/$c.yaml"; echo "---"
+          done > rendered.yaml
       - name: kubeconform (strict; CRDs from the datree catalog)
         run: |
           curl -fsSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz
           ./kubeconform -strict -summary \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            rendered.yaml gitops/apps/*.yaml gitops/bootstrap/*.yaml
+            rendered.yaml gitops/apps/*.yaml gitops/bootstrap/*.yaml gitops/platform/*.yaml
       - name: shellcheck
         run: shellcheck -x -P SCRIPTDIR cluster/*.sh
 
   image:
-    needs: [exporter, rules, manifests]
+    needs: [python, rules, manifests]
+    strategy:
+      matrix: { app: [freshness-exporter, delivery-metrics] }
     runs-on: ubuntu-latest
     permissions: { contents: read, packages: write }
     outputs:
@@ -76,12 +79,12 @@ jobs:
         with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
       - uses: docker/build-push-action@v6
         with:
-          context: apps/freshness-exporter
+          context: apps/${{ matrix.app }}
           push: ${{ github.event_name == 'push' }}
-          tags: ${{ env.IMAGE }}:${{ steps.tag.outputs.tag }}
+          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.app }}:${{ steps.tag.outputs.tag }}
           labels: org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.app }}
 
   deploy:
     # GitOps hand-off: CI never touches the cluster. It commits the new tag; ArgoCD syncs it.
@@ -91,12 +94,14 @@ jobs:
     permissions: { contents: write }
     steps:
       - uses: actions/checkout@v4
-      - name: bump image tag in gitops/values
+      - name: bump image tags in gitops/values
         env: { TAG: "${{ needs.image.outputs.tag }}" }
         run: |
-          sed -i -E "s/^(  tag: ).*/\1\"${TAG}\"/" gitops/values/freshness-exporter.yaml
+          for f in gitops/values/freshness-exporter.yaml gitops/values/delivery-metrics.yaml; do
+            sed -i -E "s/^(  tag: ).*/\1\"${TAG}\"/" "$f"
+          done
           git diff --exit-code && exit 0
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "deploy: freshness-exporter ${TAG}"
+          git commit -am "deploy: platform ${TAG}"
           git push

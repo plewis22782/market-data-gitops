@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  labels: {{- include "dm.labels" . | nindent 4 }}
+spec:
+  selector: {{- include "dm.selector" . | nindent 4 }}
+  ports:
+    - name: metrics
+      port: {{ .Values.port }}
+      targetPort: metrics
