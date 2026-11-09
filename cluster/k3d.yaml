@@ -1,0 +1,24 @@
+# k3s-in-Docker cluster on Redfish. See docs/adr/0002-k3d-on-the-existing-docker-host.md.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: rack
+servers: 1
+agents: 2
+image: rancher/k3s:v1.33.5-k3s1
+kubeAPI:
+  hostIP: "0.0.0.0"
+  hostPort: "6550"
+ports:
+  # NodePorts published on the host for the LAN: ArgoCD, Grafana, Prometheus.
+  - port: 8441:30443
+    nodeFilters: [server:0]
+  - port: 8442:30300
+    nodeFilters: [server:0]
+  - port: 8443:30090
+    nodeFilters: [server:0]
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters: [server:*]

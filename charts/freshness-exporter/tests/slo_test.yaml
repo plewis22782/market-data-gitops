@@ -1,0 +1,84 @@
+# promtool test rules charts/freshness-exporter/tests/slo_test.yaml
+rule_files:
+  - ../rules/slo.rules.yaml
+evaluation_interval: 30s
+tests:
+  # Healthy RTH hour: no alerts, ratio 0.
+  - interval: 30s
+    input_series:
+      - series: well_market_rth
+        values: 1x240
+      - series: well_up
+        values: 1x240
+      - series: 'well_stream_age_seconds{symbol="SPX",source="recorder"}'
+        values: 5x240
+    promql_expr_test:
+      - expr: well:slo_spx_fresh:error_ratio1h
+        eval_time: 90m
+        exp_samples: [{ labels: 'well:slo_spx_fresh:error_ratio1h', value: 0 }]
+    alert_rule_test:
+      - { alertname: RecorderFreshnessBudgetFastBurn, eval_time: 90m, exp_alerts: [] }
+
+  # Feed goes dark for the second hour of RTH: fast burn fires.
+  - interval: 30s
+    input_series:
+      - series: well_market_rth
+        values: 1x240
+      - series: well_up
+        values: 1x240
+      - series: 'well_stream_age_seconds{symbol="SPX",source="recorder"}'
+        values: 5x120 300+30x120
+    alert_rule_test:
+      - alertname: RecorderFreshnessBudgetFastBurn
+        eval_time: 110m
+        exp_alerts:
+          - exp_labels: { severity: page }
+            exp_annotations:
+              summary: SPX data has been stale for a large share of the last hour of RTH
+              runbook: docs/runbooks/recorder-freshness.md
+
+  # Monitor unreachable during RTH (well_up 0, no age series) counts as bad, not as missing.
+  - interval: 30s
+    input_series:
+      - series: well_market_rth
+        values: 1x120
+      - series: well_up
+        values: 0x120
+    promql_expr_test:
+      - expr: well:slo_spx_fresh:good
+        eval_time: 30m
+        exp_samples: [{ labels: 'well:slo_spx_fresh:good', value: 0 }]
+      - expr: well:slo_spx_fresh:error_ratio30m
+        eval_time: 59m
+        exp_samples: [{ labels: 'well:slo_spx_fresh:error_ratio30m', value: 1 }]
+
+  # Stale feed outside RTH (the weekend stop, the CME halt): no budget burned, no alert.
+  - interval: 30s
+    input_series:
+      - series: well_market_rth
+        values: 0x240
+      - series: well_up
+        values: 1x240
+      - series: 'well_stream_age_seconds{symbol="SPX",source="recorder"}'
+        values: 3600+30x240
+    promql_expr_test:
+      - expr: well:slo_spx_fresh:good
+        eval_time: 60m
+        exp_samples: [{ labels: 'well:slo_spx_fresh:good', value: 0 }]
+      - expr: well:slo_spx_fresh:total
+        eval_time: 60m
+        exp_samples: [{ labels: 'well:slo_spx_fresh:total', value: 0 }]
+    alert_rule_test:
+      - { alertname: RecorderFreshnessBudgetFastBurn, eval_time: 110m, exp_alerts: [] }
+      - { alertname: RecorderFreshnessBudgetSlowBurn, eval_time: 110m, exp_alerts: [] }
+
+  - interval: 1m
+    input_series: []
+    alert_rule_test:
+      - alertname: FreshnessExporterAbsent
+        eval_time: 6m
+        exp_alerts:
+          - exp_labels: { severity: ticket }
+            exp_annotations:
+              summary: Prometheus has no freshness-exporter samples; the SLO is blind
+              runbook: docs/runbooks/recorder-freshness.md

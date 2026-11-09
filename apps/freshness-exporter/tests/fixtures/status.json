@@ -1,0 +1,91 @@
+{
+  "profile": "well",
+  "recorder": {
+    "state": "running",
+    "startedAt": "2026-11-08T22:30:05.622249182Z",
+    "uptimeSeconds": 69017,
+    "restartCount": 0
+  },
+  "prodRecorder": null,
+  "streams": {
+    "perSymbol": [
+      {
+        "symbol": "SPX",
+        "rowsLast1m": 12,
+        "rowsLast5m": 60,
+        "lastEventAt": "2026-11-09 17:40:22.796347+00",
+        "bridged": false,
+        "source": "recorder",
+        "state": "fresh",
+        "ageSeconds": 0,
+        "note": "flowing"
+      },
+      {
+        "symbol": "QQQ",
+        "rowsLast1m": 12,
+        "rowsLast5m": 60,
+        "lastEventAt": "2026-11-09 17:40:22.796347+00",
+        "bridged": false,
+        "source": "recorder",
+        "state": "fresh",
+        "ageSeconds": 0,
+        "note": "flowing"
+      },
+      {
+        "symbol": "IWM",
+        "rowsLast1m": 12,
+        "rowsLast5m": 63,
+        "lastEventAt": "2026-11-09 17:40:22.796347+00",
+        "bridged": false,
+        "source": "recorder",
+        "state": "fresh",
+        "ageSeconds": 0,
+        "note": "flowing"
+      },
+      {
+        "symbol": "/ES:XCME",
+        "rowsLast1m": 12,
+        "rowsLast5m": 60,
+        "lastEventAt": "2026-11-09 17:40:22.796347+00",
+        "bridged": false,
+        "source": "recorder",
+        "state": "fresh",
+        "ageSeconds": 0,
+        "note": "flowing"
+      }
+    ],
+    "optionContracts": {
+      "symbol": "option contracts (all)",
+      "rowsLast1m": 6571,
+      "rowsLast5m": 45611,
+      "lastEventAt": "2026-11-09 17:40:22.796347+00",
+      "source": "recorder",
+      "state": "fresh",
+      "ageSeconds": 0,
+      "note": "flowing"
+    }
+  },
+  "storage": {
+    "dbSizeBytes": 50220817431,
+    "marketDataRawBytes": 25476898816,
+    "archiveBytes": 142721024
+  },
+  "compaction": [
+    {
+      "day": "2026-11-07",
+      "status": "skip",
+      "rawDropped": false,
+      "contracts": 0,
+      "ranAt": "2026-11-08 00:36:34.105399+00"
+    },
+    {
+      "day": "2026-11-06",
+      "status": "pass",
+      "rawDropped": false,
+      "contracts": 4377,
+      "ranAt": "2026-11-08 00:36:34.100427+00"
+    }
+  ],
+  "now": "2026-11-09T17:40:23.209Z",
+  "cacheAgeSeconds": 6
+}

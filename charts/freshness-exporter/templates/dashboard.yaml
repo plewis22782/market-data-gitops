@@ -1,0 +1,12 @@
+{{- if .Values.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-dashboard
+  labels:
+    {{- include "fe.labels" . | nindent 4 }}
+    grafana_dashboard: "1"
+data:
+  freshness-slo.json: |-
+{{ .Files.Get "dashboards/freshness-slo.json" | indent 4 }}
+{{- end }}

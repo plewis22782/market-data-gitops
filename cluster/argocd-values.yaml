@@ -1,0 +1,12 @@
+server:
+  service:
+    type: NodePort
+    nodePortHttps: 30443
+configs:
+  params:
+    # Self-signed TLS on the LAN NodePort; no ingress in this cluster.
+    server.insecure: false
+dex:
+  enabled: false
+notifications:
+  enabled: false

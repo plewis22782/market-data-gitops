@@ -1,0 +1,4 @@
+# Environment values for the rack cluster. CI updates image.tag on every merge to main.
+image:
+  tag: "0.1.0"
+monitorUrl: http://192.168.4.25:8091

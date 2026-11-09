@@ -1,0 +1,28 @@
+# Pick up ServiceMonitors / PrometheusRules from every namespace, not only this release's.
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 45d          # > the 30-day SLO window
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 20Gi } }
+grafana:
+  service:
+    type: NodePort
+    nodePort: 30300
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+# k3s runs these inside the server process; there is nothing separate to scrape.
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+kubeEtcd: { enabled: false }

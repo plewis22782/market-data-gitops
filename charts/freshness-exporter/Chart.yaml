@@ -1,0 +1,6 @@
+apiVersion: v2
+name: freshness-exporter
+description: Prometheus exporter and SLO rules for market-data recorder freshness
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

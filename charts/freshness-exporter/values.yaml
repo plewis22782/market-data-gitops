@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/plewis22782/freshness-exporter
+  tag: ""          # CI writes the commit SHA here via gitops/values; empty falls back to appVersion
+  pullPolicy: IfNotPresent
+
+# The recorder monitor this exporter reads. Required.
+monitorUrl: ""
+fetchTimeoutSeconds: 5
+logLevel: INFO
+
+replicaCount: 1
+port: 9108
+
+resources:
+  requests: { cpu: 10m, memory: 32Mi }
+  limits: { memory: 96Mi }
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  scrapeTimeout: 10s
+  labels: {}
+
+# SLO + alerting rules (rules/slo.rules.yaml), rendered as a PrometheusRule.
+prometheusRule:
+  enabled: true
+  labels: {}
+
+# Grafana dashboard ConfigMap, picked up by the kube-prometheus-stack Grafana sidecar.
+dashboard:
+  enabled: true

@@ -1,0 +1,59 @@
+# SLO: during US regular trading hours, the SPX stream is fresh (last event < 60 s ago)
+# for 99.5% of evaluations over a rolling 30 days. See docs/adr/0004-recorder-freshness-slo.md.
+#
+# This file is plain Prometheus rule YAML so `promtool test rules` can run against it directly;
+# the Helm chart embeds it unchanged in a PrometheusRule.
+groups:
+  - name: well-slo-recording
+    interval: 30s
+    rules:
+      # 1 if this evaluation is inside RTH, else 0. Absent if the exporter itself is unscraped.
+      - record: well:slo_spx_fresh:total
+        expr: max(well_market_rth)
+      # 1 if inside RTH and SPX is fresh. A monitor that can't be read (well_up 0) counts as bad.
+      - record: well:slo_spx_fresh:good
+        expr: |
+          (
+            (max(well_stream_age_seconds{symbol="SPX"}) < bool 60) * on() max(well_up)
+            or on() max(well_up) * 0
+          ) * on() max(well_market_rth)
+
+  - name: well-slo-burn
+    rules:
+      - record: well:slo_spx_fresh:error_ratio5m
+        expr: 1 - sum_over_time(well:slo_spx_fresh:good[5m]) / sum_over_time(well:slo_spx_fresh:total[5m])
+      - record: well:slo_spx_fresh:error_ratio30m
+        expr: 1 - sum_over_time(well:slo_spx_fresh:good[30m]) / sum_over_time(well:slo_spx_fresh:total[30m])
+      - record: well:slo_spx_fresh:error_ratio1h
+        expr: 1 - sum_over_time(well:slo_spx_fresh:good[1h]) / sum_over_time(well:slo_spx_fresh:total[1h])
+      - record: well:slo_spx_fresh:error_ratio6h
+        expr: 1 - sum_over_time(well:slo_spx_fresh:good[6h]) / sum_over_time(well:slo_spx_fresh:total[6h])
+      - record: well:slo_spx_fresh:error_ratio30d
+        expr: 1 - sum_over_time(well:slo_spx_fresh:good[30d]) / sum_over_time(well:slo_spx_fresh:total[30d])
+      # 1.0 = whole budget left, 0 = spent, negative = SLO breached.
+      - record: well:slo_spx_fresh:budget_remaining
+        expr: 1 - well:slo_spx_fresh:error_ratio30d / 0.005
+
+  - name: well-alerts
+    rules:
+      # Multiwindow burn-rate alerts (Google SRE workbook, ch. 5). 14.4x burns 2% of a 30-day
+      # budget in 1 h; 6x burns 5% in 6 h. The short window stops the alert as soon as it recovers.
+      - alert: RecorderFreshnessBudgetFastBurn
+        expr: well:slo_spx_fresh:error_ratio1h > 14.4 * 0.005 and well:slo_spx_fresh:error_ratio5m > 14.4 * 0.005
+        labels: { severity: page }
+        annotations:
+          summary: SPX data has been stale for a large share of the last hour of RTH
+          runbook: docs/runbooks/recorder-freshness.md
+      - alert: RecorderFreshnessBudgetSlowBurn
+        expr: well:slo_spx_fresh:error_ratio6h > 6 * 0.005 and well:slo_spx_fresh:error_ratio30m > 6 * 0.005
+        labels: { severity: ticket }
+        annotations:
+          summary: SPX freshness is burning the 30-day error budget faster than sustainable
+          runbook: docs/runbooks/recorder-freshness.md
+      - alert: FreshnessExporterAbsent
+        expr: absent(well_up)
+        for: 5m
+        labels: { severity: ticket }
+        annotations:
+          summary: Prometheus has no freshness-exporter samples; the SLO is blind
+          runbook: docs/runbooks/recorder-freshness.md

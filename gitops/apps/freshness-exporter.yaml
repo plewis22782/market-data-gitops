@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: freshness-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"   # after the Prometheus CRDs exist
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/plewis22782/market-data-gitops.git
+    targetRevision: main
+    path: charts/freshness-exporter
+    helm:
+      valueFiles: [../../gitops/values/freshness-exporter.yaml]
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: well
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]
