@@ -7,3 +7,8 @@ rendered.yaml
 kubeconform
 *.kubeconfig
 .env
+.terraform/
+*.tfstate
+*.tfstate.*
+tfplan
+.terraform.lock.hcl.bak

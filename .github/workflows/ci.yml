@@ -48,8 +48,9 @@ jobs:
       - name: helm lint + render every chart with its real environment values
         run: |
           for c in freshness-exporter delivery-metrics; do
-            helm lint "charts/$c" -f "gitops/values/$c.yaml"
-            helm template "$c" "charts/$c" -f "gitops/values/$c.yaml"; echo "---"
+            helm lint "charts/$c" -f "gitops/values/$c.yaml" >&2
+            helm template "$c" "charts/$c" -f "gitops/values/$c.yaml"
+            echo "---"
           done > rendered.yaml
       - name: kubeconform (strict; CRDs from the datree catalog)
         run: |
@@ -61,8 +62,19 @@ jobs:
       - name: shellcheck
         run: shellcheck -x -P SCRIPTDIR cluster/*.sh
 
+  terraform:
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: terraform/github } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.13.4 }
+      - run: terraform fmt -check -recursive -diff
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
   image:
-    needs: [python, rules, manifests]
+    needs: [python, rules, manifests, terraform]
     strategy:
       matrix: { app: [freshness-exporter, delivery-metrics] }
     runs-on: ubuntu-latest
@@ -93,7 +105,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions: { contents: write }
     steps:
+      # The deploy key (terraform/github) is the one actor the main ruleset lets push directly.
+      # Before Terraform has run, the secret is empty and checkout falls back to GITHUB_TOKEN.
       - uses: actions/checkout@v4
+        with: { ssh-key: "${{ secrets.DEPLOY_KEY }}" }
       - name: bump image tags in gitops/values
         env: { TAG: "${{ needs.image.outputs.tag }}" }
         run: |

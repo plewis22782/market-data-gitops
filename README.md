@@ -28,6 +28,8 @@ flowchart LR
 | `charts/freshness-exporter/` | Helm chart: Deployment (non-root, read-only root FS), Service, ServiceMonitor, PrometheusRule, Grafana dashboard. |
 | `charts/freshness-exporter/rules/` | SLO recording rules and multiwindow burn-rate alerts, unit-tested with `promtool test rules`. |
 | `gitops/` | ArgoCD app of apps, the Applications, and per-environment values. CI writes the image tag here; ArgoCD does the deploy. |
+| `apps/delivery-metrics/` | DORA metrics (deploy frequency, lead time, change failure rate, time to restore) from this repo's own commits and CI runs. |
+| `terraform/github/` | Repository settings, the `main` ruleset and the CI deploy key as code. |
 | `cluster/` | k3d cluster config, pinned tool versions, checksum-verified tool install, bootstrap and teardown. |
 | `docs/dr/` | Disaster-recovery objectives and drill results. |
 | `docs/adr/` | Architecture decision records. Start with [0001](docs/adr/0001-record-architecture-decisions.md). |
@@ -46,7 +48,8 @@ fire on user impact, not on a single slow scrape. Reasoning in
 
 ## Path to production
 
-1. Open a PR. CI runs lint, unit tests, rule tests, chart lint and render, schema validation, and shellcheck.
+1. Open a PR (direct pushes to `main` are blocked by the Terraform-managed ruleset). CI runs lint,
+   unit tests, rule tests, chart lint and render, schema validation, shellcheck and `terraform validate`; all are required.
 2. Merge to `main`. CI builds the image, pushes `ghcr.io/plewis22782/freshness-exporter:sha-<commit>`,
    and commits that tag to `gitops/values/freshness-exporter.yaml`.
 3. ArgoCD sees the commit and syncs. CI never holds cluster credentials.
@@ -65,8 +68,8 @@ removes everything. Nothing outside the cluster is touched ([ADR 0002](docs/adr/
 ## Roadmap
 
 - [x] Disaster-recovery drills: rebuild from git timed against RTO/RPO ([docs/dr/drills.md](docs/dr/drills.md)). Drill 1 met the RTO (5 min) and failed the RPO, which led to ADR 0006.
-- [ ] Delivery metrics from GitHub Actions: lead time, deploy frequency, change failure rate, time to restore.
-- [ ] Terraform for the GitHub side: branch protection, required checks, environments.
+- [x] Delivery (DORA) metrics from git history: `apps/delivery-metrics`, ADR 0007.
+- [x] Terraform for the GitHub side: settings, `main` ruleset, CI deploy key. `terraform/github`, ADR 0008.
 - [ ] Alertmanager routing to a real receiver.
 - [ ] Exchange holiday calendar for the RTH flag (today a holiday counts as RTH; see ADR 0004).
 - [ ] Second SLO for option-contract coverage, not just the index stream.
